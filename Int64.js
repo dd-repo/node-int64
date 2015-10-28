@@ -27,6 +27,18 @@
  * http://en.wikipedia.org/wiki/Double_precision_floating-point_format
  */
 
+;(function (root, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(factory);
+    }
+    else if (typeof module !== 'undefined' && module.exports) {
+        module.exports = factory();
+    }
+    else {
+        root.Int64 = factory();
+    }
+}(this, function() {
+
 // Useful masks and values for bit twiddling
 var MASK31 =  0x7fffffff, VAL31 = 0x80000000;
 var MASK32 =  0xffffffff, VAL32 = 0x100000000;
@@ -36,6 +48,8 @@ var _HEX = [];
 for (var i = 0; i < 256; i++) {
   _HEX[i] = (i > 0xF ? '' : '0') + i.toString(16);
 }
+
+var hasBuffer = typeof Buffer !== 'undefined';
 
 //
 // Int64
@@ -50,8 +64,9 @@ for (var i = 0; i < 256; i++) {
  * new Int64(number)             - Number (throws if n is outside int64 range)
  * new Int64(hi, lo)             - Raw bits as two 32-bit values
  */
-var Int64 = module.exports = function(a1, a2) {
-  if (a1 instanceof Buffer) {
+var Int64 = function(a1, a2) {
+  var asIs = hasBuffer ? (a1 instanceof Buffer) : (a1 instanceof Uint8Array);
+  if (asIs) {
     this.buffer = a1;
     this.offset = a2 || 0;
   } else if (Object.prototype.toString.call(a1) == '[object Uint8Array]') {
@@ -62,7 +77,7 @@ var Int64 = module.exports = function(a1, a2) {
     this.buffer = new Buffer(a1);
     this.offset = a2 || 0;
   } else {
-    this.buffer = this.buffer || new Buffer(8);
+    this.buffer = this.buffer || (hasBuffer ? new Buffer(8) : new Uint8Array(8));
     this.offset = 0;
     this.setValue.apply(this, arguments);
   }
@@ -266,3 +281,6 @@ Int64.prototype = {
     return '[Int64 value:' + this + ' octets:' + this.toOctetString(' ') + ']';
   }
 };
+
+return Int64;
+}));
